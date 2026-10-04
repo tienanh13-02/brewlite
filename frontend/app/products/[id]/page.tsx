@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useCart } from '@/store/cart';
 
 interface Product {
   id: number;
@@ -27,53 +28,89 @@ const TOPPING_EXTRA: Record<string, number> = {
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+
+  // Lấy hàm addItem từ Zustand store
+  const addItem = useCart((state) => state.addItem);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [size, setSize] = useState('M');
-  const [topping, setTopping] = useState('Không');
+  const [size, setSize] = useState<'S' | 'M' | 'L'>('M');
+  const [topping, setTopping] = useState<string>('Không');
   const [qty, setQty] = useState(1);
 
-  useEffect(() => {
-    if (!id) return;
+  // Thông báo "đã thêm vào giỏ" (hiện 2 giây rồi ẩn)
+  const [added, setAdded] = useState(false);
 
+  useEffect(() => {
+    if (!params.id) return;
+
+    setLoading(true);
     api
-      .get<Product>(`/products/${id}`)
-      .then((res) => setProduct(res.data))
-      .catch(() => setError('Không tìm thấy sản phẩm'))
-      .finally(() => setLoading(false));
-  }, [id]);
+      .get<Product>(`/products/${params.id}`)
+      .then((res) => {
+        setProduct(res.data);
+        setError(null);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch product:', err);
+        setError('Không tải được sản phẩm.');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [params.id]);
 
   if (loading) {
-    return <p className="p-4 text-center">Đang tải...</p>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-gray-500 text-lg">Đang tải sản phẩm...</p>
+      </div>
+    );
   }
 
   if (error || !product) {
     return (
-      <div className="p-4 text-center">
-        <p className="text-red-500">{error || 'Có lỗi xảy ra'}</p>
+      <div className="flex flex-col justify-center items-center min-h-screen gap-4">
+        <p className="text-red-500 text-lg">{error || 'Không tìm thấy sản phẩm'}</p>
         <button
-          onClick={() => router.back()}
-          className="mt-4 text-orange-600 underline"
+          onClick={() => router.push('/')}
+          className="px-4 py-2 bg-orange-600 text-white rounded"
         >
-          ← Quay lại
+          Về trang chủ
         </button>
       </div>
     );
   }
 
-  const unitPrice =
-    product.price + SIZE_EXTRA[size] + TOPPING_EXTRA[topping];
+  // Derived state: tính lại mỗi lần render, không lưu vào state
+  const unitPrice = product.price + SIZE_EXTRA[size] + TOPPING_EXTRA[topping];
   const total = unitPrice * qty;
 
+  // Hàm xử lý khi bấm "Thêm vào giỏ"
+  const handleAddToCart = () => {
+    addItem({
+      productId: product.id,
+      name: product.name,
+      basePrice: product.price,
+      size,
+      topping,
+      unitPrice,
+      qty,
+      imageUrl: product.imageUrl,
+    });
+
+    // Hiện thông báo "đã thêm"
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  };
+
   return (
-    <div className="max-w-md mx-auto p-4">
+    <div className="max-w-md mx-auto p-4 pb-24">
       <button
         onClick={() => router.back()}
-        className="mb-4 text-orange-600 hover:underline"
+        className="mb-4 text-orange-600 font-semibold flex items-center gap-1"
       >
         ← Quay lại
       </button>
@@ -82,54 +119,53 @@ export default function ProductDetailPage() {
         <span className="text-orange-400">Ảnh sản phẩm</span>
       </div>
 
-      <h1 className="text-2xl font-bold">{product.name}</h1>
+      <h1 className="text-2xl font-bold text-gray-800">{product.name}</h1>
       <p className="text-gray-500 mt-1">
         Giá gốc: {product.price.toLocaleString('vi-VN')}đ
       </p>
+      <p className="text-sm text-gray-400">
+        Còn lại: {product.stock} sản phẩm
+      </p>
 
-      {/* Size */}
       <div className="mt-6">
-        <p className="font-semibold mb-2">Chọn size</p>
+        <p className="font-semibold mb-2 text-gray-700">Chọn size</p>
         <div className="flex gap-2">
-          {Object.keys(SIZE_EXTRA).map((s) => (
+          {(['S', 'M', 'L'] as const).map((s) => (
             <button
               key={s}
               onClick={() => setSize(s)}
-              className={`flex-1 py-2 border rounded ${
+              className={`flex-1 py-2 border rounded-lg transition ${
                 size === s
                   ? 'bg-orange-600 text-white border-orange-600'
-                  : 'bg-white text-gray-700 border-gray-300'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-orange-400'
               }`}
             >
-              {s}
+              <div className="font-semibold">{s}</div>
               {SIZE_EXTRA[s] > 0 && (
-                <span className="block text-xs">
-                  +{SIZE_EXTRA[s].toLocaleString('vi-VN')}đ
-                </span>
+                <div className="text-xs">+{SIZE_EXTRA[s] / 1000}k</div>
               )}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Topping */}
-      <div className="mt-6">
-        <p className="font-semibold mb-2">Chọn topping</p>
-        <div className="flex flex-wrap gap-2">
+      <div className="mt-4">
+        <p className="font-semibold mb-2 text-gray-700">Chọn topping</p>
+        <div className="flex gap-2 flex-wrap">
           {Object.keys(TOPPING_EXTRA).map((t) => (
             <button
               key={t}
               onClick={() => setTopping(t)}
-              className={`px-4 py-2 border rounded ${
+              className={`px-4 py-2 border rounded-lg transition ${
                 topping === t
                   ? 'bg-orange-600 text-white border-orange-600'
-                  : 'bg-white text-gray-700 border-gray-300'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-orange-400'
               }`}
             >
               {t}
               {TOPPING_EXTRA[t] > 0 && (
-                <span className="block text-xs">
-                  +{TOPPING_EXTRA[t].toLocaleString('vi-VN')}đ
+                <span className="text-xs ml-1">
+                  +{TOPPING_EXTRA[t] / 1000}k
                 </span>
               )}
             </button>
@@ -137,52 +173,49 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Số lượng */}
-      <div className="mt-6 flex items-center gap-4">
-        <p className="font-semibold">Số lượng:</p>
-        <div className="flex items-center border rounded">
+      <div className="mt-4 flex items-center justify-between">
+        <p className="font-semibold text-gray-700">Số lượng</p>
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setQty((q) => Math.max(1, q - 1))}
-            className="px-4 py-2 text-xl hover:bg-gray-100"
+            className="w-10 h-10 border rounded-lg text-xl font-bold text-gray-700 hover:bg-gray-100"
           >
             −
           </button>
-          <span className="px-4 py-2 border-x min-w-[3rem] text-center">
-            {qty}
-          </span>
+          <span className="w-8 text-center font-semibold">{qty}</span>
           <button
-            onClick={() => setQty((q) => q + 1)}
-            className="px-4 py-2 text-xl hover:bg-gray-100"
+            onClick={() => setQty((q) => Math.min(product.stock, q + 1))}
+            className="w-10 h-10 border rounded-lg text-xl font-bold text-gray-700 hover:bg-gray-100"
           >
             +
           </button>
         </div>
       </div>
 
-      {/* Tổng tiền */}
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+      <div className="mt-6 p-4 bg-orange-50 rounded-lg">
         <div className="flex justify-between text-sm text-gray-600">
           <span>Đơn giá:</span>
           <span>{unitPrice.toLocaleString('vi-VN')}đ</span>
         </div>
-        <div className="flex justify-between text-lg font-bold mt-2">
+        <div className="flex justify-between text-lg font-bold text-orange-600 mt-1">
           <span>Tổng:</span>
-          <span className="text-orange-600">
-            {total.toLocaleString('vi-VN')}đ
-          </span>
+          <span>{total.toLocaleString('vi-VN')}đ</span>
         </div>
       </div>
 
+      {/* Thông báo "đã thêm vào giỏ" */}
+      {added && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+          ✓ Đã thêm vào giỏ
+        </div>
+      )}
+
+      {/* Nút "Thêm vào giỏ" */}
       <button
-        onClick={() => {
-          // Task 5 sẽ làm phần thêm vào giỏ
-          alert(
-            `Đã chọn: ${product.name} - Size ${size} - ${topping} - SL ${qty} - Tổng ${total.toLocaleString('vi-VN')}đ`
-          );
-        }}
-        className="mt-4 w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700"
+        onClick={handleAddToCart}
+        className="fixed bottom-4 left-4 right-4 max-w-md mx-auto bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition"
       >
-        Thêm vào giỏ
+        Thêm vào giỏ • {total.toLocaleString('vi-VN')}đ
       </button>
     </div>
   );
