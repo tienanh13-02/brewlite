@@ -55,5 +55,9 @@ pids
 *.seed
 *.pid.lock
 
+# Local test credentials and tokens
+/login.json
+/token.txt
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
