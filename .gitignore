@@ -25,3 +25,13 @@ out/
 # Logs
 *.log
 npm-debug.log*
+
+# ========================================
+# Payment test files (BẢO MẬT)
+# ========================================
+*payment*.json
+*payment*.txt
+*Payment*.json
+*Payment*.txt
+*idempotency*.txt
+*idempotency*.json

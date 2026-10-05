@@ -6,6 +6,7 @@ import { ProductsModule } from './products/products.module.js';
 import { OrdersModule } from './orders/orders.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -32,7 +33,8 @@ import { AuthModule } from './auth/auth.module.js';
     PrismaModule,     // ← Thêm
     ProductsModule,
     OrdersModule,
-    AuthModule,     // ← Sẽ tạo ở phần H
+    AuthModule,
+    PaymentsModule,     // ← Sẽ tạo ở phần H
   ],
   controllers: [AppController],
   providers: [AppService],

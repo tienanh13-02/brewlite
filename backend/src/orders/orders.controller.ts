@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseIntPipe,
   Post,
   Req,
   UseGuards,
@@ -24,5 +26,11 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard)
   getMyOrders(@Req() req: any) {
     return this.ordersService.findByUser(req.user.userId);
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  getOrder(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.ordersService.findOneForUser(id, req.user.userId);
   }
 }
