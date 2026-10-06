@@ -34,7 +34,7 @@ describe('OrdersService', () => {
     await expect(service.findByUser(3)).resolves.toEqual([order]);
     expect(prisma.order.findMany).toHaveBeenCalledWith({
       where: { userId: 3 },
-      include: { items: true },
+      include: { items: true, payment: true },
       orderBy: { createdAt: 'desc' },
     });
   });

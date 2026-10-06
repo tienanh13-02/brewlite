@@ -100,7 +100,7 @@ export class OrdersService {
   async findByUser(userId: number) {
     return this.prisma.order.findMany({
       where: { userId },
-      include: { items: true },
+      include: { items: true, payment: true },  // ← Thêm payment
       orderBy: { createdAt: 'desc' },
     });
   }

@@ -35,3 +35,6 @@ npm-debug.log*
 *Payment*.txt
 *idempotency*.txt
 *idempotency*.json
+
+# Docker
+.env

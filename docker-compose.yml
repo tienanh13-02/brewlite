@@ -1,6 +1,9 @@
 version: '3.8'
 
 services:
+  # ============================================
+  # PostgreSQL
+  # ============================================
   postgres:
     image: postgres:15-alpine
     container_name: brewlite-postgres
@@ -13,6 +16,51 @@ services:
       - "5432:5432"
     volumes:
       - brewlite-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brewlite -d brewlite"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Backend (NestJS)
+  # ============================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: brewlite-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://brewlite:brewlite@postgres:5432/brewlite?schema=public"
+      JWT_SECRET: "${JWT_SECRET:-dev-secret-change-me-in-production}"
+      JWT_EXPIRES_IN: "7d"
+      PAYMENT_MODE: "mock"
+      PORT: 3000
+      NODE_ENV: "production"
+    ports:
+      - "3000:3000"
+
+  # ============================================
+  # Frontend (Next.js)
+  # ============================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: "http://localhost:3000"
+    container_name: brewlite-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:3000"
+    ports:
+      - "3001:3001"
 
 volumes:
   brewlite-pgdata:
