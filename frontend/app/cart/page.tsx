@@ -1,13 +1,34 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/store/cart';
+import { useAuth } from '@/store/auth';
+import BackButton from '@/components/BackButton';
+import ProductImage from '@/components/ProductImage';
 
 export default function CartPage() {
+  const router = useRouter();
   const items = useCart((state) => state.items);
   const removeItem = useCart((state) => state.removeItem);
   const updateQty = useCart((state) => state.updateQty);
   const totalPrice = useCart((state) => state.totalPrice);
+  const token = useAuth((state) => state.token);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  const handleCheckout = () => {
+    if (!hydrated) return;
+    if (!token) {
+      router.push('/login?returnTo=/checkout');
+      return;
+    }
+    router.push('/checkout');
+  };
 
   if (items.length === 0) {
     return (
@@ -26,6 +47,7 @@ export default function CartPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 pb-32">
+      <BackButton />
       <h1 className="text-2xl font-bold mb-4">
         Giỏ hàng ({items.length} món)
       </h1>
@@ -37,9 +59,11 @@ export default function CartPage() {
             className="border rounded-lg p-3 bg-white flex gap-3"
           >
             {/* Ảnh */}
-            <div className="w-20 h-20 bg-orange-100 rounded flex items-center justify-center flex-shrink-0">
-              <span className="text-orange-400 text-xs">Ảnh</span>
-            </div>
+            <ProductImage
+              imageUrl={item.imageUrl}
+              alt={item.name}
+              className="w-20 h-20 bg-orange-100 rounded flex-shrink-0"
+            />
 
             {/* Thông tin */}
             <div className="flex-1 min-w-0">
@@ -108,12 +132,16 @@ export default function CartPage() {
 
       {/* Nút thanh toán */}
       <div className="fixed bottom-4 left-4 right-4 max-w-2xl mx-auto">
-        <Link
-          href="/checkout"
-          className="block bg-orange-600 text-white py-3 rounded-lg font-semibold text-center hover:bg-orange-700"
+        <button
+          type="button"
+          onClick={handleCheckout}
+          disabled={!hydrated}
+          className="block w-full bg-orange-600 text-white py-3 rounded-lg font-semibold text-center hover:bg-orange-700 disabled:opacity-50"
         >
-          Thanh toán • {totalPrice().toLocaleString('vi-VN')}đ
-        </Link>
+          {!hydrated
+            ? 'Đang khôi phục phiên đăng nhập...'
+            : `Thanh toán • ${totalPrice().toLocaleString('vi-VN')}đ`}
+        </button>
       </div>
     </div>
   );

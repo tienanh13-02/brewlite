@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import ProductImage from '@/components/ProductImage';
 
 interface Product {
   id: number;
@@ -63,9 +64,11 @@ export default function ProductGrid() {
           href={`/products/${product.id}`}
           className="border rounded-lg p-3 hover:shadow-lg transition-shadow bg-white"
         >
-          <div className="bg-orange-100 h-32 rounded mb-2 flex items-center justify-center">
-            <span className="text-orange-400 text-sm">Ảnh sản phẩm</span>
-          </div>
+          <ProductImage
+            imageUrl={product.imageUrl}
+            alt={product.name}
+            className="bg-orange-100 h-32 rounded mb-2"
+          />
           <h3 className="font-semibold text-gray-800 truncate">
             {product.name}
           </h3>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import Header from '@/components/Header';
+import BackButton from '@/components/BackButton';
 
 interface Order {
   id: number;
@@ -88,6 +89,7 @@ export default function OrdersHistoryPage() {
     <>
       <Header />
       <div className="max-w-md mx-auto p-4">
+        <BackButton />
         <h1 className="text-2xl font-bold mb-4">Lịch sử đơn hàng</h1>
         <div className="space-y-3">
           {orders.map((order) => {

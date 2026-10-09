@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useCart } from '@/store/cart';
+import ProductImage from '@/components/ProductImage';
 
 interface Product {
   id: number;
@@ -115,9 +116,11 @@ export default function ProductDetailPage() {
         ← Quay lại
       </button>
 
-      <div className="bg-orange-100 h-48 rounded-lg mb-4 flex items-center justify-center">
-        <span className="text-orange-400">Ảnh sản phẩm</span>
-      </div>
+      <ProductImage
+        imageUrl={product.imageUrl}
+        alt={product.name}
+        className="bg-orange-100 h-48 rounded-lg mb-4"
+      />
 
       <h1 className="text-2xl font-bold text-gray-800">{product.name}</h1>
       <p className="text-gray-500 mt-1">

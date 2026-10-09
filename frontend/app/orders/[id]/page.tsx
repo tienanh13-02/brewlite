@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import Header from '@/components/Header';
+import BackButton from '@/components/BackButton';
 
 interface OrderItem {
   id: number;
@@ -107,6 +108,7 @@ export default function OrderDetailPage() {
     <>
       <Header />
       <div className="max-w-md mx-auto p-4">
+        <BackButton />
         {/* Icon thành công */}
         {isSuccess && (
           <div className="text-center mb-6">
